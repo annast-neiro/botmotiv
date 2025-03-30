@@ -28,12 +28,12 @@ def get_main_menu():
 # Обработка команды /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Автоматическая регистрация чата для рассылки
-    context.application.chat_data[update.effective_chat.id] = True
+    context.chat_data["registered"] = True
 
     await update.message.reply_text(
         "🎽 Привет! Я твой спортивный мотивационный бот!\n"
-        "Я твой спортивный мотиватор и буду присылать тебе мотивационные сообщения.\n"
-        "Жди сообщений в 10:00, 12:00 и 16:00 по МСК!\n\n"
+        "Я буду присылать тебе мотивационные сообщения каждый день:\n"
+        "⏰ В 10:00, 12:00, 16:00, 17:00 и 20:00 по МСК.\n\n"
         "А пока можешь выбрать кнопку ниже:",
         reply_markup=get_main_menu()
     )
@@ -69,7 +69,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Планировщик рассылки
 async def scheduler(application):
     tz = pytz.timezone("Europe/Moscow")
-    target_hours = [10, 12, 16]
+    target_hours = [10, 12, 16, 17, 20]  # Добавлены 17 и 20
     sent_today = set()
 
     while True:
@@ -79,8 +79,8 @@ async def scheduler(application):
             for chat_id in application.chat_data:
                 try:
                     await application.bot.send_message(chat_id=chat_id, text=message)
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Ошибка при отправке сообщения в чат {chat_id}: {e}")
             sent_today.add(now.hour)
 
         if now.hour == 0:
