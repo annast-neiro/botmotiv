@@ -27,6 +27,9 @@ def get_main_menu():
 
 # Обработка команды /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Автоматическая регистрация чата для рассылки
+    context.application.chat_data[update.effective_chat.id] = True
+
     await update.message.reply_text(
         "🎽 Привет! Я твой спортивный мотивационный бот!\n"
         "Я твой спортивный мотиватор и буду присылать тебе мотивационные сообщения.\n"
@@ -80,26 +83,21 @@ async def scheduler(application):
                     pass
             sent_today.add(now.hour)
 
-        # Обнуляем в полночь
         if now.hour == 0:
             sent_today.clear()
         await asyncio.sleep(60)
 
-# Хэндлер для сохранения чатов
-async def save_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.application.chat_data[update.effective_chat.id] = True
+# Фоновый запуск планировщика
+async def on_startup(app: Application):
+    asyncio.create_task(scheduler(app))
 
 # Запуск бота
 def main():
-    app = Application.builder().token(TOKEN).build()
+    app = Application.builder().token(TOKEN).post_init(on_startup).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(CommandHandler("save", save_chat))
-
-    # Запуск планировщика в фоне
-    app.job_queue.run_once(lambda *_: asyncio.create_task(scheduler(app)), when=0)
 
     print("🎽 Бот запущен...")
     app.run_polling()
